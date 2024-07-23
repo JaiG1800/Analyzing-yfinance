@@ -1,0 +1,58 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style('whitegrid')
+plt.style.use("fivethirtyeight")
+%matplotlib inline
+
+# For reading stock data from Yahoo
+import pandas_datareader.data as web
+import yfinance as yf
+
+# For time stamps
+from datetime import datetime
+
+# The tech stocks we'll use for this analysis
+tech_list = ['AAPL', 'JPM', 'DIS', 'AMZN', 'TSLA', 'ARCH', 'MUSA', 'SMCI', 'SIGA', 'EGY']
+
+# Set up End and Start times for data grab
+end = datetime.now()
+start = datetime(end.year - 1, end.month, end.day)
+
+# Create a dictionary to store the data for each stock
+stock_data = {}
+
+for stock in tech_list:
+    stock_data[stock] = yf.download(stock, start, end)
+
+# Create a list of dataframes for each stock
+dataframes = [stock_data[stock] for stock in tech_list]
+
+# Combine the dataframes into one
+df = pd.concat(dataframes, keys=tech_list, names=['Stock Symbol'])
+
+# Reset the index
+df.reset_index(inplace=True)
+
+# Create a dictionary to map stock symbols to company names
+company_name_mapping = {
+    'AAPL': 'APPLE',
+    'JPM': 'JPMorgan Chase & Co',
+    'DIS': 'Walt Disney Co',
+    'AMZN': 'AMAZON',
+    'TSLA': 'Tesla',
+    'ARCH': 'Murphy USA Inc.',
+    'MUSA': 'Supermicro Computer',
+    'SMCI': 'SIGA Technologies',
+    'SIGA': 'VAALCO Energy',
+    'EGY': 'EGY'
+}
+
+# Add the company name column to the dataframe
+df['Company Name'] = df['Stock Symbol'].map(company_name_mapping)
+
+# Display the last 10 rows of the dataframe
+df.tail(10)
