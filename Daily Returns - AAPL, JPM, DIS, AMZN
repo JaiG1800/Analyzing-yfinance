@@ -1,0 +1,19 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Assuming 'dataframes' is a list of DataFrames as in your original code
+plt.figure(figsize=(15, 6))
+plt.subplots_adjust(top=5, bottom=2)
+
+for i, company_df in enumerate(dataframes, 1):
+    # Calculate daily returns from the 'Adj Close' column
+    company_df['Daily Return'] = company_df['Adj Close'].pct_change()
+
+    plt.subplot(2, 2, i)
+    company_df['Daily Return'].hist(bins=50)
+    plt.ylabel('Frequency')
+    plt.xlabel('Daily Return')
+    plt.title(f'Daily Returns for {tech_list[i - 1]}')
+
+plt.tight_layout()
