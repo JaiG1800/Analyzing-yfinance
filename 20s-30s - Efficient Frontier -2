@@ -1,0 +1,84 @@
+import yfinance as yf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+
+# Define the list of tickers
+tickers = ['AAPL', 'JPM', 'DIS', 'AMZN', 'TSLA','ARCH','MUSA', 'SMCI','SIGA','EGY']
+
+# Download historical data
+data = yf.download(tickers, start="2015-01-01", end="2020-01-01")
+
+# Calculate log returns
+log_returns = np.log(data['Adj Close'] / data['Adj Close'].shift(1))
+log_returns = log_returns.dropna()
+
+# Calculate mean returns and covariance matrix
+mean_returns = log_returns.mean()
+cov_matrix = log_returns.cov()
+
+# Define the objective function for portfolio optimization
+def objective(weights):
+    return np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+
+# Define constraints (weights sum up to 1)
+constraints = ({'type': 'eq', 'fun': lambda weights: np.sum(weights) - 1})
+
+# Define bounds for individual stock weights (0 <= weight <= 1)
+bounds = tuple((0, 1) for _ in range(len(tickers)))
+
+# Initial equal weights
+initial_weights = np.array([1 / len(tickers)] * len(tickers))
+
+# Perform portfolio optimization for the optimal portfolio
+optimal_weights = minimize(objective, initial_weights, method='SLSQP', bounds=bounds, constraints=constraints)
+optimal_weights = optimal_weights.x
+
+# Calculate portfolio statistics for the optimal portfolio
+portfolio_return = np.dot(optimal_weights, mean_returns)
+portfolio_std_dev = objective(optimal_weights)
+
+# Perform portfolio optimization for the minimum variance portfolio
+min_variance_weights = minimize(lambda x: x @ cov_matrix @ x, initial_weights, method='SLSQP', bounds=bounds, constraints=constraints)
+min_variance_weights = min_variance_weights.x
+
+# Calculate portfolio statistics for the minimum variance portfolio
+min_variance_return = np.dot(min_variance_weights, mean_returns)
+min_variance_std_dev = objective(min_variance_weights)
+
+# Print portfolio statistics
+print("Optimal Weights:", optimal_weights)
+print("Portfolio Return (Optimal):", portfolio_return)
+print("Portfolio Standard Deviation (Optimal):", portfolio_std_dev)
+
+print("Minimum Variance Weights:", min_variance_weights)
+print("Portfolio Return (Minimum Variance):", min_variance_return)
+print("Portfolio Standard Deviation (Minimum Variance):", min_variance_std_dev)
+
+# Generate random portfolios for efficient frontier
+num_portfolios = 10000
+results = np.zeros((3, num_portfolios))
+for i in range(num_portfolios):
+    weights = np.random.random(len(tickers))
+    weights /= np.sum(weights)
+    portfolio_return = np.dot(weights, mean_returns)
+    portfolio_std_dev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+    results[0, i] = portfolio_return
+    results[1, i] = portfolio_std_dev
+    results[2, i] = portfolio_return / portfolio_std_dev
+
+# Convert results array to DataFrame
+results_df = pd.DataFrame(results.T, columns=['Return', 'Risk', 'Sharpe'])
+
+# Plot efficient frontier
+plt.figure(figsize=(10, 6))
+plt.scatter(results_df['Risk'], results_df['Return'], c=results_df['Sharpe'], cmap='viridis')
+plt.colorbar(label='Sharpe Ratio')
+plt.xlabel('Risk (Standard Deviation)')
+plt.ylabel('Return')
+plt.title('Efficient Frontier')
+plt.scatter(portfolio_std_dev, portfolio_return, marker='*', color='r', s=200, label='Optimal Portfolio')
+plt.scatter(min_variance_std_dev, min_variance_return, marker='o', color='g', s=200, label='Min. Variance Portfolio')
+plt.legend()
+plt.show()
