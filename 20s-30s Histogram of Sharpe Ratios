@@ -1,0 +1,46 @@
+import pandas as pd
+import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the list of stocks
+stocks = ['AAPL', 'JPM', 'DIS', 'AMZN', 'TSLA', 'ARCH', 'MUSA', 'SMCI', 'SIGA', 'EGY']
+
+# Define the time period
+start_date = '2015-01-01'
+end_date = '2020-01-01'
+
+# Download historical stock price data
+stock_data = yf.download(stocks, start=start_date, end=end_date)['Adj Close']
+
+# Calculate daily returns
+returns = stock_data.pct_change().dropna()
+
+# Define the risk-free rate (e.g., 10-year US Treasury yield)
+risk_free_rate = 0.02  # Replace with the actual risk-free rate
+
+# Create an empty list to store Sharpe ratios for different portfolios
+sharpe_ratios = []
+
+# Loop through different portfolios (you can replace this with your own logic)
+for _ in range(10):
+    # Assuming you have a way to select different weights for the stocks in each portfolio
+    # Replace the weights with your own logic or use random weights for demonstration
+    portfolio_weights = np.random.rand(len(stocks))
+    portfolio_weights /= portfolio_weights.sum()
+
+    # Calculate the portfolio's returns and standard deviation
+    portfolio_returns = (returns * portfolio_weights).sum(axis=1)
+    portfolio_std_deviation = portfolio_returns.std()
+
+    # Calculate the Sharpe ratio for the portfolio
+    sharpe_ratio = (portfolio_returns.mean() - risk_free_rate) / portfolio_std_deviation
+    sharpe_ratios.append(sharpe_ratio)
+
+# Create a histogram of Sharpe ratios for the different portfolios
+plt.hist(sharpe_ratios, bins=20, edgecolor='k', alpha=0.7)
+plt.xlabel('Sharpe Ratio')
+plt.ylabel('Frequency')
+plt.title('Histogram of Sharpe Ratios for Portfolios')
+plt.grid(True)
+plt.show()
